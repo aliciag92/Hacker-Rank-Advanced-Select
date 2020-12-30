@@ -1,2 +1,2 @@
 # Hacker-Rank-Advanced-Select
-This repo solves the "Type of Triangle" challenge on Hacker Rank
+This repo solves complex challenges on Hacker Rank
