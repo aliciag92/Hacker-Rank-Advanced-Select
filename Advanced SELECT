@@ -1,0 +1,228 @@
+#1. Write a query identifying the type of each record in the TRIANGLES table using its three side lengths. 
+Output one of the following statements for each record in the table:
+
+Equilateral: It's a triangle with 3 sides of equal length.
+Isosceles: It's a triangle with 2 sides of equal length.
+Scalene: It's a triangle with 3 sides of differing lengths.
+Not A Triangle: The given values of A, B, and C don't form a triangle.
+
+The TRIANGLES table is described as follows:
+|  Column  |   Type   |
+|---------------------|
+| A        | Integer  |
+| B        | Integer  |
+| C        | Integer  |
+Each row in the table denotes the lengths of each of a triangle's three sides.
+
+Explanation:
+Values in the tuple (20, 20, 23) form an Isosceles triangle, because A = B.
+Values in the tuple (20, 20, 20) form an Equilateral triangle, because A=B=C. 
+Values in the tuple (20, 21, 22) form a Scalene triangle, because A !-B !=C.
+Values in the tuple (13, 14, 30) cannot form a triangle because the combined value of sides A and B is not larger than that of side C.
+
+Answer: 
+SELECT CASE
+    WHEN A+B>C AND B+C>A AND A+C>B THEN
+        CASE 
+            WHEN A=B AND B=C THEN 'Equilateral'
+            WHEN A=B or A=C OR B=C THEN 'Isosceles'
+            ELSE 'Scalene'
+        END
+    ELSE 'Not A Triangle'
+END
+FROM TRIANGLES;
+
+Answer explained:
+Step 1: First we select case to check if given input is a triangle or not
+
+Step 2: If it is a triangle then check for its type. 
+So first case if all sides are the same, then the triangle type is 'Equilateral', then second case if any two sides are the same then the triangle type is 'Isosceles', otherwise the triangle type is 'Scalene'.
+
+Example output:
+Equilateral 
+Equilateral 
+Isosceles 
+Equilateral 
+Isosceles 
+Equilateral 
+Scalene 
+Not A Triangle 
+Scalene 
+
+#2. Generate the following two result sets:
+    a. Query an alphabetically ordered list of all names in OCCUPATIONS, immediately followed by the first letter of each profession as a parenthetical (i.e.: enclosed in parentheses). For example: AnActorName(A), ADoctorName(D), AProfessorName(P), and ASingerName(S).
+    b. Query the number of ocurrences of each occupation in OCCUPATIONS. Sort the occurrences in ascending order, and output them in the following format:
+            There are a total of [occupation_count] [occupation]s.
+       where [occupation_count] is the number of occurrences of an occupation in OCCUPATIONS and [occupation] is the lowercase occupation name. If more than one Occupation has the same [occupation_count], they should be ordered alphabetically.
+Note: There will be at least two entries in the table for each type of occupation.
+
+The OCCUPATIONS table is described as follows:  
+|   Column   |   Type   |
+|-----------------------|
+| Name       | String   |
+| Occupation | String   |
+Occupation will only contain one of the following values: Doctor, Professor, Singer or Actor.
+
+Sample Output:
+Ashely(P)
+Christeen(P)
+Jane(A)
+Meera(S)
+Priya(S)
+Samantha(D)
+There are a total of 2 singers.
+
+Explanation:
+The results of the first query are formatted to the problem description's specifications.
+The results of the second query are ascendingly ordered first by number of names corresponding to each profession (2 =< 2 =< 3 =< 3), and then alphabetically by profession (doctor =< singer, and actor =< professor).
+
+Answer: 
+SELECT Name || '(' || SUBSTR(Occupation,1,1) || ')'-- AS THETEXT, '1' AS SELECTNUMBER
+    FROM OCCUPATIONS
+    order by Name;
+
+    SELECT 'There are a total of' || ' ' || COUNT(*) || ' ' || lower(Occupation) || 's.'
+    FROM OCCUPATIONS  GROUP BY OCCUPATION                            
+    ORDER BY COUNT(Occupation), lower(Occupation);
+Another answer:
+SELECT (name || '(' || SUBSTR(occupation,1,1) || ')') FROM occupations ORDER BY name;
+SELECT ('There are a total of ' || COUNT(occupation) || ' ' || LOWER(occupation) || 's' || '.') 
+FROM occupations 
+GROUP BY occupation 
+ORDER BY COUNT(occupation), occupation ASC;
+
+Example output:
+Aamina(D) 
+Ashley(P) 
+Christeen(S) 
+Eve(A) 
+Jane(S) 
+Jennifer(A) 
+Ketty(A) 
+Samantha(A) 
+There are a total of 4 actors. 
+
+#3. Pivot the Occupation column in OCCUPATIONS so that each Name is sorted alphabetically and displayed underneath its corresponding Occupation. 
+The output column headers should be Doctor, Professor, Singer, and Actor, respectively.
+Note: Print NULL when there are no more names corresponding to an occupation.
+Answer: 
+SELECT Doctor, Professor, Singer, Actor FROM (
+SELECT ROW_NUMBER() OVER (PARTITION BY occupation ORDER BY name) as rn, name, occupation FROM       occupations) 
+PIVOT 
+(MAX(name) FOR occupation IN ('Doctor' as Doctor,'Professor' as Professor, 'Singer' as Singer, 'Actor' as Actor)) 
+ORDER BY rn;
+
+Output:
+Aamina Ashley Christeen Eve 
+Julia Belvet Jane Jennifer 
+Priya Britney Jenny Ketty 
+NULL Maria Kristeen Samantha 
+NULL Meera NULL NULL 
+NULL Naomi NULL NULL 
+NULL Priyanka NULL NULL
+
+#4. You are given a table, BST, containing two columns: N and P, where N represents the value of a node in Binary Tree, and P is the parent of N.
+|  Column  |   Type   |
+|---------------------|
+| N        | Integer  |
+| P        | Integer  |
+Write a query to find the node type of Binary Tree ordered by the value of the node. Output one of the following for each node:
+    Root: If node is root node.
+    Leaf: If node is leaf node.
+    Inner: If node is neither root nor leaf node.
+
+Answer:
+SELECT N,
+CASE
+WHEN P IS NULL THEN 'Root'
+WHEN N IN (SELECT P FROM BST) THEN 'Inner'
+ELSE 'Leaf'
+END
+FROM BST
+ORDER by N;
+
+Output:
+1 Leaf 
+2 Inner 
+3 Leaf 
+4 Inner 
+5 Leaf 
+6 Inner 
+7 Leaf 
+8 Leaf 
+9 Inner 
+10 Leaf 
+11 Inner 
+12 Leaf 
+13 Inner 
+14 Leaf 
+15 Root
+
+#5. Amber's conglomerate corporation just acquired some new companies. Each of the companies follows this hierarchy: 
+        Founder -->Lead Manager -->Senior Manager -->Manager -->Employee
+Given the table schemas below, write a query to print the company_code, founder name, total number of lead managers, total number of senior managers, total number of managers, and total number of employees. Order your output by ascending company_code.
+Note:
+    The tables may contain duplicate records.
+    The company_code is string, so the sorting should not be numeric. For example, if the company_codes are C_1, C_2, and C_10, then the ascending company_codes will be C_1, C_10, and C_2.
+
+The following tables contain company data:
+
+Company: The company_code is the code of the company and founder is the founder of the company. 
+|    Column    |   Type   |
+|-------------------------|
+| company_code | String   |
+| founder      | String   |
+
+Lead_Manager: The lead_manager_code is the code of the lead manager, and the company_code is the code of the working company. 
+|      Column       |   Type   |
+|------------------------------|
+| lead_manager_code | String   |
+| company_code      | String   |
+
+Senior_Manager: The senior_manager_code is the code of the senior manager, the lead_manager_code is the code of its lead manager, and the company_code is the code of the working company. 
+|        Column       |   Type   |
+|--------------------------------|
+| senior_manager_code | String   |
+| lead_manager_code   | String   |
+| company_code        | String   |
+
+Manager: The manager_code is the code of the manager, the senior_manager_code is the code of its senior manager, the lead_manager_code is the code of its lead manager, and the company_code is the code of the working company. 
+|        Column       |   Type   |
+|--------------------------------|
+| manager_code        | String   |
+| senior_manager_code | String   |
+| lead_manager_code   | String   |
+| company_code        | String   |
+
+Employee: The employee_code is the code of the employee, the manager_code is the code of its manager, the senior_manager_code is the code of its senior manager, the lead_manager_code is the code of its lead manager, and the company_code is the code of the working company. 
+|        Column       |   Type   |
+|--------------------------------|
+| employee_code       | String   |
+| manager_code        | String   |
+| senior_manager_code | String   |
+| lead_manager_code   | String   |
+| company_code        | String   |
+
+Explanation:
+In company C1, the only lead manager is LM1. There are two senior managers, SM1 and SM2, under LM1. There is one manager, M1, under senior manager SM1. There are two employees, E1 and E2, under manager M1.
+In company C2, the only lead manager is LM2. There is one senior manager, SM3, under LM2. There are two managers, M2 and M3, under senior manager SM3. There is one employee, E3, under manager M2, and another employee, E4, under manager, M3.
+
+Answer:
+SELECT c.company_code, c.founder, COUNT(DISTINCT e.lead_manager_code), COUNT(DISTINCT e.senior_manager_code), COUNT(DISTINCT e.manager_code), COUNT(DISTINCT e.employee_code) FROM company c
+JOIN employee e ON c.company_code = e.company_code GROUP BY c.company_code, c.founder ORDER BY c.company_code;
+
+Output:
+C1 Angela 1 2 5 13 
+C10 Earl 1 1 2 3 
+C100 Aaron 1 2 4 10 
+C11 Robert 1 1 1 1 
+C12 Amy 1 2 6 14 
+C13 Pamela 1 2 5 14 
+C14 Maria 1 1 3 5 
+C15 Joe 1 1 2 3 
+C16 Linda 1 1 3 5 
+C17 Melissa 1 2 3 7 
+C18 Carol 1 2 5 6 
+C19 Paula 1 2 4 7 
+C2 Frank 1 1 1 3 
+C20 Marilyn 1 1 2 2 
